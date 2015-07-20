@@ -181,12 +181,12 @@ Xlib (the client library for X11) uses tagged unions for XEvent.
 It turns out that I was checking the tag on the XEvent, but then casting it to the wrong substructure.
 \item
 The fix was essentially this:
-\begin{Verbatim}[frame=single, fontsize=\scriptsize]
-  if evt.get_type() != SelectionRequest {
+\begin{Verbatim}[frame=single, fontsize=\scriptsize, commandchars=\\\{\}]
+  if evt.get_type() != SelectionRequest \{
       return false;
-  }
-- let event: &XSelectionEvent        = unsafe { transmute(evt) };
-+ let event: &XSelectionRequestEvent = unsafe { transmute(evt) };
+  \}
+\textcolor{red}{- let event: &XSelectionEvent        = unsafe \{ transmute(evt) \};}
+\textcolor{green}{+ let event: &XSelectionRequestEvent = unsafe \{ transmute(evt) \};}
 \end{Verbatim}
 \end{itemize}
 \end{frame}
