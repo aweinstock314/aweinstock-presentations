@@ -1,5 +1,5 @@
 \documentclass{beamer}
-%\usepackage{tikz}
+\usepackage{tikz}
 \title{Implementing a clipboard interface under X11 - RCOS Presentation}
 \date{July 21, 2015}
 \author{Avi Weinstock}
@@ -108,6 +108,25 @@ When a program "copies data to the clipboard" under X11, it actually starts a "s
 \item
 "Retrieving data from the server" likewise involves sending messages to the current clipboard owner (the aforementioned "server").
 \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{X11 Clipboard protocol}
+\begin{tikzpicture}
+\draw (4,5) circle (1) node{Server};
+\draw (0,0) circle (1) node{Copier};
+\draw (8,0) circle (1) node{Paster};
+
+\only<1>{\draw[->] (1,1) -- node[above]{XSetSelectionOwner} node[below]{"I'm serving the clipboard data now."} (3,4);}
+
+\only<2>{\draw[->] (7,1) -- node[above]{XConvertSelection} node[below]{"I'd like the clipboard data in one of these formats."} (5,4);}
+\only<2>{\draw[->, dashed] (3,4) -- (1,1);}
+
+
+\only<3>{\draw[->] (1,1) -- node[above]{XChangeProperty} node{"Here's the data." (or, alternatively)} node[below]{"I don't know any of those formats, here's what I support"} (3,4);}
+\only<3>{\draw[->, dashed] (5,4) -- (7,1);}
+
+\end{tikzpicture}
 \end{frame}
 
 \begin{frame}[fragile]
