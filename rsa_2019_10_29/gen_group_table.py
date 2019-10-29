@@ -2,7 +2,7 @@ import operator
 import os
 
 def addcolor(i):
-    return {0: '{\\color{cyan}0}', 1: '{\\bf\\color{green}1}'}.get(i, '{\\color{white}%d}' % (i,))
+    return {0: '{\\color{cybercyan}0}', 1: '{\\bf\\color{green}1}'}.get(i, '{\\color{white}%d}' % (i,))
 
 def table(symbol, n, f):
     #s = '\\(\\begin{array}{c|' + 'c'*n + '}\n'
