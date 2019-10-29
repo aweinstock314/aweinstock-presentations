@@ -14,10 +14,12 @@
 %>>> [0x15,0x18,0x20]
 %[21, 24, 32]
 % convert rpisec_background.png -alpha set -fill '#15182080' -draw 'rectangle 0 0 1090 1216' rpisec_background2.png
+% convert probable_prime.png -alpha set -fill '#15182080' -draw 'rectangle 0 0 414 836' probable_prime2.png
 \definecolor{rpisecbgcolor}{RGB}{21, 24, 32}
 \usebackgroundtemplate{
 \colorbox{rpisecbgcolor}{\raisebox{1pt}[\paperheight][\depth]{\hspace{0.6\paperwidth}
-\includegraphics[width=0.4\paperwidth, height=\paperheight]{rpisec_background2.png}
+%\includegraphics[width=0.4\paperwidth, height=\paperheight]{rpisec_background2.png}
+\includegraphics[width=0.4\paperwidth, height=\paperheight]{probable_prime2.png}
 }}
 }
 
