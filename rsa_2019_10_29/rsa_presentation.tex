@@ -1,4 +1,4 @@
-\documentclass{beamer}
+\documentclass[aspectratio=169]{beamer}
 \usepackage{tikz}
 \usepackage{fancyvrb}
 \usepackage{xcolor}
@@ -6,9 +6,12 @@
 \date{October 29, 2019}
 \author{Avi Weinstock (\Verb|aweinstock|)}
 
+\definecolor{cybercyan}{RGB}{42, 171, 219} % 2aabdb
+
 \setbeamercolor{normal text}{fg=white}
-\setbeamercolor{frametitle}{fg=cyan}
-\setbeamercolor{title}{fg=cyan}
+\setbeamercolor{frametitle}{fg=cybercyan}
+\setbeamercolor{title}{fg=cybercyan}
+\setbeamercolor{structure}{fg=cybercyan}
 
 %151820
 %>>> [0x15,0x18,0x20]
@@ -81,6 +84,41 @@ Examples of asymmetric crypto:
 \item $\verb|enc|(x) = \verb|rem|(x^e, n)$
 \item $\verb|dec|(x) = \verb|rem|(x^d, n)$
 \end{itemize}
+\end{frame}
+
+%>>> (ord('z')-ord('a'))*26+(ord('z')-ord('a'))
+%675
+%>>> [p for p in range(100) if gmpy.is_prime(p)]
+%[2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97]
+%>>> 23*29
+%667
+%>>> ''.join(chr(c) for c in range(ord('a'), ord('z')+1)).find('h')
+%7
+%>>> ''.join(chr(c) for c in range(ord('a'), ord('z')+1)).find('i')
+%8
+
+\begin{frame}[fragile]
+\frametitle{Example RSA encryption/decryption}
+\begin{minipage}{0.3\textwidth}
+\begin{itemize}
+\item $n = p * q$
+\item $\varphi(n) = (p-1)*(q-1)$
+\item $e * d \equiv 1\hspace{1mm}(\text{mod } \varphi(n))$
+\item $\verb|enc|(x) = \verb|rem|(x^e, n)$
+\item $\verb|dec|(x) = \verb|rem|(x^d, n)$
+\item $\verb|pow(x, k, n)| = \verb|rem|(x^k, n)$
+\end{itemize}
+\end{minipage}
+\begin{minipage}{0.6\textwidth}
+\begin{itemize}
+\item<1-> Public: $(n, e) = (667, 3)$
+\item<1-> Message \verb|"hi"|, encoded as $7*26+8 = 190$
+\item<1-> \verb|pow(190, 3, 667) == 239|
+\item<2> Private: $(p, q, d) = (23, 29, 411)$
+\item<2> \verb|(3 * 411) % (22 * 28) == 1|
+\item<2> \verb|pow(239, 411, 23*29) == 190|
+\end{itemize}
+\end{minipage}
 \end{frame}
 
 \begin{frame}[fragile]
@@ -179,13 +217,13 @@ def gcd(x, y):
 \begin{frame}[fragile]
 \frametitle{Multiplication mod 13}
 $x*x^{p-2} \equiv 1\hspace{1mm}(\text{mod }p)$\\
-\input{tables/mul_mod_13.tex}
+{\scriptsize \input{tables/mul_mod_13.tex}}
 \end{frame}
 
 \begin{frame}[fragile]
 \frametitle{Exponentiation mod 13}
 $x*x^{p-2} \equiv 1\hspace{1mm}(\text{mod }p)$\\
-\input{tables/exp_mod_13.tex}
+{\scriptsize \input{tables/exp_mod_13.tex}}
 \end{frame}
 
 \begin{frame}[fragile]

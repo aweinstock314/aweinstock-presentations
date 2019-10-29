@@ -1,13 +1,16 @@
 import operator
 import os
 
+def addcolor(i):
+    return {0: '{\\color{cyan}0}', 1: '{\\bf\\color{green}1}'}.get(i, '{\\color{white}%d}' % (i,))
+
 def table(symbol, n, f):
     #s = '\\(\\begin{array}{c|' + 'c'*n + '}\n'
     s = '\\(\\begin{array}{p{3mm}|' + 'p{2mm}'*n + '}\n'
     symbol = '\\(%s\\)' % (symbol,)
-    s += ' & '.join([symbol] + [str(i) for i in range(n)]) + '\\\\\\hline\n'
+    s += ' & '.join([symbol] + [addcolor(i) for i in range(n)]) + '\\\\\\hline\n'
     for i in range(n):
-        s += ' & '.join([str(i)] + [str(f(i, j)%n) for j in range(n)]) + '\\\\\n'
+        s += '&'.join([addcolor(i)] + [addcolor(f(i, j)%n) for j in range(n)]) + '\\\\\n'
     s += '\\end{array}\\)'
     return s
 
