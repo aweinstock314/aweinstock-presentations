@@ -78,7 +78,7 @@ assert pow(ciphertext, d, n) == message
 \begin{frame}[fragile]
 \frametitle{Why to use e = 65537}
 \begin{itemize}
-\item $2^{16+1} = 65537_{10} = 10000000000000001_2$
+\item $2^{16+1} = 65537_{10} = 10001_{16} = 10000000000000001_2$
 \item It's prime, so $\verb|invert|(65537, \varphi(n))$ is more likely to exist
 \item It mitigates multiple attacks:
 \begin{itemize}
@@ -127,7 +127,7 @@ def crt(eqns):
     \textcolor{green}{a1}, \textcolor{cybercyan}{n1} = eqns[1]
     _, \textcolor{orange}{m0, m1}, _, _ = eea(\textcolor{cybercyan}{n0, n1})
     assert \textcolor{orange}{m0}*\textcolor{cybercyan}{n0} + \textcolor{orange}{m1}*\textcolor{cybercyan}{n1} == 1
-    \textcolor{cyberpink}{x} = \textcolor{green}{a0}*\textcolor{orange}{m1}*\textcolor{cybercyan}{n1} + \textcolor{green}{a1}*\textcolor{orange}{m0}*\textcolor{cybercyan}{n0}
+    \textcolor{cyberpink}{x} = (\textcolor{green}{a0}*\textcolor{orange}{m1}*\textcolor{cybercyan}{n1} + \textcolor{green}{a1}*\textcolor{orange}{m0}*\textcolor{cybercyan}{n0}) % (\textcolor{cybercyan}{n0} * \textcolor{cybercyan}{n1})
     if len(eqns) > 2:
         \textcolor{cyberpink}{x} = crt([(\textcolor{pink}{x}, \textcolor{cybercyan}{n0}*\textcolor{cybercyan}{n1})]+eqns[2:])
     for (\textcolor{green}{a}, \textcolor{cybercyan}{n}) in eqns:
@@ -148,6 +148,47 @@ def crt(eqns):
 \item $\verb|eea|({\color{cybercyan}5,7})$ gives us $({\color{orange}3, -2})$ as the Bezout coefficients
 \item This tells us that ${\color{orange}3}*{\color{cybercyan}5} + {\color{orange}(-2)}*{\color{cybercyan}7} = 1$
 \item CRT gives us that ${\color{cyberpink}x} = {\color{green}3} * {\color{orange}(-2)} * {\color{cybercyan}7} + {\color{green}5} * {\color{orange}3} * {\color{cybercyan}5}$ solves the equation
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{CRT Application - Breaking same-message RSA - Theory}
+\begin{itemize}
+\item Suppose we have
+$c_1 \equiv m^3\hspace{1mm}(\text{mod }n_1)$,
+$c_2 \equiv m^3\hspace{1mm}(\text{mod }n_2)$, and
+$c_3 \equiv m^3\hspace{1mm}(\text{mod }n_3)$.
+\item $\verb|crt|([(c_1, n_1), (c_2, n_2), (c_3, n_3)]) \equiv m^3\hspace{1mm}(\text{mod }n_1*n_2*n_3)$
+\item Since $n_1*n_2*n_3 > \verb|max|(n_1, n_2, n_3)$, even if $m^3$ wrapped on each of the moduli, it is likely cube-rootable mod the product of the moduli
+\end{itemize}
+\end{frame}
+
+%>>> ns = [23*29, 19*31, 37*41]
+%>>> ns
+%[667, 589, 1517]
+%>>> pow(190, 3, 1517)
+%643
+%>>> pow(190, 3)
+%6859000
+%>>> [pow(190, 3, n) for n in ns]
+%[239, 95, 643]
+%>>> from crt import crt
+%>>> crt([(239, 667),(95, 589),(643, 1517)]
+%... )
+%4074073199788171
+%>>> crt([(239, 667),(95, 589),(643, 1517)]) % (667 * 589 * 1517)
+%6859000
+%>>> import gmpy
+%>>> gmpy.root(crt([(239, 667),(95, 589),(643, 1517)]) % (667 * 589 * 1517), 3)
+%(mpz(190), 1)
+
+\begin{frame}[fragile]
+\frametitle{CRT Application - Breaking same-message RSA - Example}
+\begin{itemize}
+\item $\verb|crt|([(c_1, n_1), (c_2, n_2), (c_3, n_3)]) \equiv m^3\hspace{1mm}(\text{mod }n_1*n_2*n_3)$
+\item $(c_1, n_1) = (239, 667)$, $(c_2, n_2) = (95, 589)$, $(c_3, n_3) = (643, 1517)$
+\item $\verb|crt([(239, 667), (95, 589), (643, 1517)]) == 6859000|$
+\item $\sqrt[3]{6859000} = 190$
 \end{itemize}
 \end{frame}
 

@@ -8,7 +8,7 @@ def crt(eqns):
     a1, n1 = eqns[1]
     _, m0, m1, _, _ = eea(n0, n1)
     assert m0*n0 + m1*n1 == 1
-    x = a0*m1*n1 + a1*m0*n0
+    x = (a0*m1*n1 + a1*m0*n0) % (n0 * n1)
     if len(eqns) > 2:
         x = crt([(x, n0*n1)]+eqns[2:])
     for (a, n) in eqns:
