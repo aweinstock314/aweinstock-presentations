@@ -193,6 +193,47 @@ $c_3 \equiv m^3\hspace{1mm}(\text{mod }n_3)$.
 \end{frame}
 
 \begin{frame}[fragile]
+\frametitle{CRT Application - Speeding up RSA decryption - Theory}
+\begin{itemize}
+\item $\verb|encrypt|(m) = \verb|pow|(m, e, n)$, $\verb|decrypt|(c) = \verb|pow|(c, d, n)$
+\item If $e = 65537$, it's small and fast to compute with (around 16 bits), but $d$ is around the size of $n$ (2048 bits if $p$ and $q$ are each 1024 bits)
+\item $\verb|fastdecrypt|(c) = \verb|crt|([(\verb|pow|(c, d_p, p), p), (\verb|pow|(c, d_q, q), q)])$, where
+$e * d_p \equiv 1\hspace{1mm}(\text{mod }p-1)$ and
+$e * d_q \equiv 1\hspace{1mm}(\text{mod }q-1)$
+\item Works because $\verb|pow|(c, d_p, p) \equiv m\hspace{1mm}(\text{mod }p)$ (and likewise for $q$), so CRT reconstructs $x \equiv m\hspace{1mm}(\text{mod }p*q)$
+\item Is faster because $p$ and $q$ are only 1024 bit, so computations mod those are cheaper
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{CRT Application - Speeding up RSA decryption - Code}
+\begin{itemize}
+\item
+\begin{Verbatim}[fontsize=\scriptsize]
+from codecs import encode
+from gmpy import invert, next_prime
+from crt import crt
+from time import time
+import os
+
+p = next_prime(int(encode(os.urandom(4096/8), 'hex'), 16))
+q = next_prime(int(encode(os.urandom(4096/8), 'hex'), 16))
+n = p * q
+e = 65537
+d = invert(e, (p-1)*(q-1))
+dp = invert(e, p-1)
+dq = invert(e, q-1)
+
+msg = int(encode('hello', 'hex'), 16)
+s0 = time(); ctxt = pow(msg, e, n); t0 = time()-s0
+s1 = time(); m1 = pow(ctxt, d, n); t1 = time()-s1
+s2 = time(); m2 = crt([(pow(ctxt, dp, p), p), (pow(ctxt, dq, q), q)]); t2 = time()-s2
+assert m1 == m2 == msg
+\end{Verbatim}
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
 \frametitle{Saltstack 2013 e=1 bug}
 % RSA e=1 commit from saltstack 0.15.1 release notes
 \includegraphics[width=0.9\paperwidth]{saltstack_rsa_diff.png}
