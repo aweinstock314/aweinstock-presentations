@@ -3,7 +3,7 @@ def eea(x, y):
     r, s, t = x, 1, 0
     R, S, T = y, 0, 1
     while R > 0:
-        q = r/R
+        q = r//R
         new = r-q*R, s-q*S, t-q*T
         r, s, t = R, S, T
         R, S, T = new
