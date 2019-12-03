@@ -180,6 +180,93 @@ print(solver.model())
 \end{frame}
 
 \begin{frame}[fragile]
+\frametitle{Cyberseed Hasher - Problem description}
+\begin{itemize}
+\item This year's Cyberseed, one of the challenges was a Java crackme
+\item We were only given a class file, no source
+\item DDG'ing "java decompiler online" found \verb|https://devtoolzone.com/decompiler/java|
+\item Now we had source :)
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Cyberseed Hasher - Decompiled source}
+\begin{Verbatim}[fontsize=\scriptsize, frame=single]
+public class Hasher {   
+    private static boolean hash(final String s) {
+        int n = 7;
+        final int n2 = 593779930;
+        for (int i = 0; i < s.length(); ++i) {
+            n = n * 31 + s.charAt(i);
+        }
+        return n == n2;
+    }
+
+    public static void main(final String[] array) {
+        if (array.length != 1) {
+            System.out.println("Usage: java Hasher <password>");
+            System.exit(1);
+        }
+        if (hash(array[0])) {
+            System.out.println("Correct");
+        }
+        else {
+            System.out.println("Incorrect");
+        }
+    }
+}
+\end{Verbatim}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Cyberseed Hasher - Z3 script: 1/2}
+\begin{Verbatim}[fontsize=\scriptsize, frame=single]
+import z3
+wanted_length = 6
+
+names = ['x{i}'.format(i=i) for i in range(wanted_length)]
+vars = [z3.Int(n) for n in names]
+
+expr = 7
+for i in range(wanted_length):
+    expr *= 31
+    expr += vars[i]
+
+prob = z3.Solver()
+prob.add((expr % (2**32)) == 593779930)
+\end{Verbatim}
+\begin{itemize}
+\item Concrete input length: \verb|z3.Array| exists, but is more expensive
+\item Only use \verb|z3.Array| if you need symbolic indexing
+\item \verb|z3.Int(n)| is faster than \verb|z3.BitVec(n, 32)| here, needed trial and error for this
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Cyberseed Hasher - Z3 script: 2/2}
+\begin{Verbatim}[fontsize=\scriptsize, frame=single]
+for v in vars:
+    prob.add(ord('0') <= v)
+    prob.add(v <= ord('z'))
+
+res = prob.check()
+print('z3 check: %r' % (res,))
+if res.r == 1:
+    soln = prob.model()
+    print('z3 solution: %r' % (soln,))
+    print(repr(''.join(chr(soln[v].as_long()) for v in vars)))
+\end{Verbatim}
+\begin{Verbatim}[fontsize=\scriptsize, frame=single]
+z3 check: sat
+z3 solution: [x3 = 74, x2 = 98, x1 = 114, x5 = 48, x4 = 51, x0 = 100]
+'drbJ30'
+\end{Verbatim}
+\begin{itemize}
+\item Requiring that \verb|ord('0') <= v <= ord('z')| mostly-guarantees alphanumeric input (there's a few exceptions in the middle)
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
 \frametitle{MBE Lab1A - Just Running It}
 \includegraphics[width=0.9\paperwidth]{pictures/mbe_lab1a_dynamic_fail_cropped.png}
 \end{frame}
@@ -243,8 +330,7 @@ sym_serial = z3.BitVec('serial', 32)
 \begin{itemize}
 \item 8-bit entries for each character
 \item 32-bit serial number
-\item Concrete input length: \verb|z3.Array| exists, but is more expensive
-\item Only use \verb|z3.Array| if you need symbolic indexing
+\item Concrete input length: \verb|z3.Array| is more expensive
 \end{itemize}
 \end{frame}
 
