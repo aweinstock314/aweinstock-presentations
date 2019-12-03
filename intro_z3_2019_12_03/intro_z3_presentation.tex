@@ -1,4 +1,6 @@
 \documentclass[aspectratio=169]{beamer}
+\usepackage{amsmath}
+\usepackage{amssymb}
 \usepackage{tikz}
 \usepackage{fancyvrb}
 \usepackage{xcolor}
@@ -34,10 +36,13 @@
 \frametitle{Overview}
 \begin{itemize}
 \item What are SAT/SMT/Z3?
-\item Solving MBE lab1A with Z3
+\item Solving some linear equations with Z3
 \item Solving a Cyberseed RE challenge with Z3
+\item Solving MBE lab1A with Z3
 \end{itemize}
 \end{frame}
+
+\section{Background}
 
 \begin{frame}[fragile]
 \frametitle{What is SAT?}
@@ -99,7 +104,7 @@
 \end{frame}
 
 \begin{frame}[fragile]
-\frametitle{Using Z3 on small examples}
+\frametitle{Using Z3 on small examples: 1/3}
 \begin{itemize}
 \item $(x \lor \neg y \lor z) \land (\neg x \lor y)$
 \item \begin{Verbatim}[fontsize=\scriptsize, frame=single]
@@ -110,6 +115,15 @@ solver.add(z3.And(z3.Or(x, z3.Not(y), z), z3.Or(z3.Not(x), y)))
 if solver.check().r == 1:
     print(solver.model())
 \end{Verbatim}
+\item \begin{Verbatim}[fontsize=\scriptsize, frame=single]
+[z = False, y = False, x = False]
+\end{Verbatim}
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Using Z3 on small examples: 2/3}
+\begin{itemize}
 \item $(2*x+y \le z) \land (x+3*y \ge z) \land (z > 1)$
 \item \begin{Verbatim}[fontsize=\scriptsize, frame=single]
 import z3
@@ -120,6 +134,47 @@ solver.add(x+3*y >= z)
 solver.add(z > 1)
 if solver.check().r == 1:
     print(solver.model())
+\end{Verbatim}
+\item \begin{Verbatim}[fontsize=\scriptsize, frame=single]
+[z = 5, y = 1, x = 2]
+\end{Verbatim}
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Using Z3 on small examples: 3/3}
+\begin{itemize}
+\item 
+\(
+\left[\begin{matrix}
+1 & 2 & 3\\
+4 & 5 & 6\\
+7 & 8 & 9
+\end{matrix}\right] 
+\left[\begin{matrix}
+x\\y\\z
+\end{matrix}\right] 
+ = \left[\begin{matrix}
+1\\2\\3
+\end{matrix}\right]
+\)
+\item \begin{Verbatim}[fontsize=\scriptsize, frame=single]
+import z3
+x, y, z = z3.Reals('x y z')
+solver = z3.Solver()
+solver.add(1*x + 2*y + 3*z == 1)
+solver.add(4*x + 5*y + 6*z == 2)
+solver.add(7*x + 8*y + 9*z == 3)
+status = solver.check()
+assert solver.check().r == 1
+print(solver.model())
+solver.add(x != 0, y != 0, z != 0)
+assert solver.check().r == 1
+print(solver.model())
+\end{Verbatim}
+\item \begin{Verbatim}[fontsize=\scriptsize, frame=single]
+[z = 1/3, y = 0, x = 0]
+[z = -1, y = 8/3, x = -4/3]
 \end{Verbatim}
 \end{itemize}
 \end{frame}
