@@ -167,7 +167,7 @@ if solver.check().r == 1:
 
 \begin{frame}[fragile]
 \frametitle{MBE Lab1A - auth() 5/6: Loop body, much math}
-\includegraphics[width=0.9\paperwidth]{pictures/intel/mbe_lab1a_auth_chunk5.png}
+\includegraphics[width=0.8\paperwidth]{pictures/intel/mbe_lab1a_auth_chunk5.png}
 \end{frame}
 
 \begin{frame}[fragile]
@@ -176,11 +176,11 @@ if solver.check().r == 1:
 \end{frame}
 
 \begin{frame}[fragile]
-\frametitle{MBE Lab1A - Z3ing auth() 1/?: Setting up variables}
+\frametitle{MBE Lab1A - Z3ing auth() 1/7: Setting up variables}
 \begin{Verbatim}[fontsize=\scriptsize, frame=single]
 import z3
 solver = z3.Solver()
-wanted_length = 6
+wanted_length = 8
 assert wanted_length > 5 # checked at 0x08048a4f
 sym_username = [z3.BitVec('x{i}'.format(i=i), 8) for i in range(wanted_length)]
 sym_serial = z3.BitVec('serial', 32)
@@ -194,7 +194,7 @@ sym_serial = z3.BitVec('serial', 32)
 \end{frame}
 
 \begin{frame}[fragile]
-\frametitle{MBE Lab1A - Z3ing auth() 2/?: Translating the pre-loop math}
+\frametitle{MBE Lab1A - Z3ing auth() 2/7: Translating the pre-loop math}
 \begin{Verbatim}[fontsize=\scriptsize, frame=single]
 0x08048ab6      8b4508         mov eax, dword [arg_8h]
 0x08048ab9      83c003         add eax, 3 ; eax = (arg_8h + 3)
@@ -218,7 +218,7 @@ local_10h = eax
 \end{frame}
 
 \begin{frame}[fragile]
-\frametitle{MBE Lab1A - Z3ing auth() 3/?: Translating the loop header/footer}
+\frametitle{MBE Lab1A - Z3ing auth() 3/7: Translating the loop header/footer}
 The following x86:
 \begin{Verbatim}[fontsize=\scriptsize, frame=single]
 0x08048acf      c745ec000000.  mov dword [local_14h], 0
@@ -240,6 +240,154 @@ So we'll gloss that as the following in Python
 local_ch = len(sym_username) # this is set by the strnlen at 0x08048a3e
 for local_14h in range(local_ch):
     pass # we'll translate the loop body here
+\end{Verbatim}
+\end{frame}
+
+\begin{frame}[fragile,t]
+\frametitle{MBE Lab1A - Z3ing auth() 4/7: Translating the loop body: 1/2}
+\begin{minipage}{0.5\textwidth}x86:\end{minipage}
+\begin{minipage}{0.49\textwidth}Python:\end{minipage}
+\begin{minipage}{0.5\textwidth}
+\begin{Verbatim}[fontsize=\scriptsize, frame=single]
+0x08048ad8      mov edx, dword [local_14h]
+0x08048adb      mov eax, dword [arg_8h]
+0x08048ade      add eax, edx
+0x08048ae0      movzx eax, byte [eax]
+0x08048ae3      cmp al, 0x1f
+0x08048ae5      jg 0x8048aee
+\end{Verbatim}
+\end{minipage}
+\begin{minipage}{0.49\textwidth}
+\begin{Verbatim}[fontsize=\scriptsize, frame=single]
+solver.add(sym_username[local_14h] > 0x1f)
+\end{Verbatim}
+\end{minipage}
+\begin{minipage}{0.5\textwidth}
+\begin{Verbatim}[fontsize=\scriptsize, frame=single]
+0x08048aee      mov edx, dword [local_14h]
+0x08048af1      mov eax, dword [arg_8h]
+0x08048af4      add eax, edx
+0x08048af6      movzx eax, byte [eax]
+0x08048af9      movsx eax, al
+0x08048afc      xor eax, dword [local_10h]
+\end{Verbatim}
+\end{minipage}
+\begin{minipage}{0.49\textwidth}
+\begin{Verbatim}[fontsize=\scriptsize, frame=single]
+eax = z3.SignExt(24, sym_username[local_14h])
+eax ^= local_10h
+\end{Verbatim}
+\end{minipage}
+\begin{minipage}{0.5\textwidth}
+\begin{Verbatim}[fontsize=\scriptsize, frame=single]
+0x08048aff      mov ecx, eax
+0x08048b01      mov edx, 0x88233b2b
+0x08048b06      mov eax, ecx
+\end{Verbatim}
+\end{minipage}
+\begin{minipage}{0.49\textwidth}
+\begin{Verbatim}[fontsize=\scriptsize, frame=single]
+ecx = eax
+edx = z3.BitVecVal(0x88233b2b, 32)
+eax = ecx
+\end{Verbatim}
+\end{minipage}
+\end{frame}
+\begin{frame}[fragile,t]
+\frametitle{MBE Lab1A - Z3ing auth() 5/7: Translating the loop body: 2/2}
+\begin{minipage}{0.5\textwidth}x86:\end{minipage}
+\begin{minipage}{0.49\textwidth}Python:\end{minipage}
+
+\begin{minipage}{0.3\textwidth}
+\begin{Verbatim}[fontsize=\scriptsize, frame=single]
+0x08048b08      mul edx
+\end{Verbatim}
+\end{minipage}
+\begin{minipage}{0.69\textwidth}
+\begin{Verbatim}[fontsize=\scriptsize, frame=single]
+mul_result = z3.ZeroExt(32, eax) * z3.ZeroExt(32, edx)
+edx = z3.Extract(63, 32, mul_result)
+eax = z3.Extract(31, 0, mul_result)
+\end{Verbatim}
+\end{minipage}
+\begin{minipage}{0.5\textwidth}
+\begin{Verbatim}[fontsize=\scriptsize, frame=single]
+0x08048b0a      mov eax, ecx
+0x08048b0c      sub eax, edx
+0x08048b0e      shr eax, 1
+0x08048b10      add eax, edx
+0x08048b12      shr eax, 0xa
+\end{Verbatim}
+\end{minipage}
+\begin{minipage}{0.49\textwidth}
+\begin{Verbatim}[fontsize=\scriptsize, frame=single]
+eax = ecx
+eax -= edx
+eax = eax >> 1
+eax += edx
+eax = eax >> 0xa
+\end{Verbatim}
+\end{minipage}
+\begin{minipage}{0.4\textwidth}
+\begin{Verbatim}[fontsize=\scriptsize, frame=single]
+0x08048b15      imul eax, eax, 0x539
+\end{Verbatim}
+\end{minipage}
+\begin{minipage}{0.59\textwidth}
+\begin{Verbatim}[fontsize=\scriptsize, frame=single]
+eax = z3.Extract(31, 0, z3.SignExt(32, eax) * 0x539)
+\end{Verbatim}
+\end{minipage}
+\begin{minipage}{0.5\textwidth}
+\begin{Verbatim}[fontsize=\scriptsize, frame=single]
+0x08048b1b      sub ecx, eax
+0x08048b1d      mov eax, ecx
+0x08048b1f      add dword [local_10h], eax
+\end{Verbatim}
+\end{minipage}
+\begin{minipage}{0.49\textwidth}
+\begin{Verbatim}[fontsize=\scriptsize, frame=single]
+ecx -= eax
+eax = ecx
+local_10h += eax
+\end{Verbatim}
+\end{minipage}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{MBE Lab1A - Z3ing auth() 6/7: Solving for a valid serial}
+\begin{Verbatim}[fontsize=\scriptsize, frame=single]
+solver.add(sym_serial == local_10h) # outside the loop
+solver.push() # backtracking point for next demo
+username = 'username'
+for (x, y) in zip(username, sym_username):
+    solver.add(ord(x) == y)
+assert solver.check().r == 1
+model = solver.model()
+serial = model.evaluate(sym_serial)
+print('serial for name %r is %r' % (username, serial))
+\end{Verbatim}
+\begin{Verbatim}[fontsize=\scriptsize, frame=single]
+serial for name 'username' is 6234463
+\end{Verbatim}
+\end{frame}
+
+%serial for name 'username' is 6234463
+%serial for name 'sEa2):2-' is 6234464
+
+\begin{frame}[fragile]
+\frametitle{MBE Lab1A - Z3ing auth() 7/7: Solving for a valid username}
+\begin{Verbatim}[fontsize=\scriptsize, frame=single]
+solver.pop() # remove the constraints on the provided username
+solver.add(sym_serial == serial+1)
+assert solver.check().r == 1
+model = solver.model()
+username2 = ''.join(chr(model.evaluate(x).as_long()) for x in sym_username)
+serial2 = model.evaluate(sym_serial)
+print('serial for name %r is %r' % (username2, serial2))
+\end{Verbatim}
+\begin{Verbatim}[fontsize=\scriptsize, frame=single]
+serial for name 'sEa2):2-' is 6234464
 \end{Verbatim}
 \end{frame}
 
