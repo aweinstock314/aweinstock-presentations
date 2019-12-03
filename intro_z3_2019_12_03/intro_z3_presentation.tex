@@ -29,6 +29,29 @@
 }}
 }
 
+% https://tex.stackexchange.com/questions/178800/creating-sections-each-with-title-pages-in-beamers-slides
+\AtBeginSection[]{
+  \begin{frame}
+  \vfill
+  \centering
+  \begin{beamercolorbox}[sep=8pt,center,shadow=true,rounded=true]{title}
+    \usebeamerfont{title}\insertsectionhead\par%
+  \end{beamercolorbox}
+  \vfill
+  \end{frame}
+}
+
+\newcommand{\questionsslide}[1]{
+  \begin{frame}
+  \vfill
+  \centering
+  \begin{beamercolorbox}[sep=8pt,center,shadow=true,rounded=true]{title}
+    \usebeamerfont{title}Any questions#1?\par%
+  \end{beamercolorbox}
+  \vfill
+  \end{frame}
+}
+
 \begin{document}
 \maketitle
 
@@ -36,13 +59,23 @@
 \frametitle{Overview}
 \begin{itemize}
 \item What are SAT/SMT/Z3?
-\item Solving some linear equations with Z3
+\item Solving some small, isolated examples with Z3
 \item Solving a Cyberseed RE challenge with Z3
 \item Solving MBE lab1A with Z3
 \end{itemize}
 \end{frame}
 
-\section{Background}
+\section{Background - What are SAT/SMT/Z3?}
+
+\begin{frame}[fragile]
+\frametitle{What is Z3?}
+\begin{itemize}
+\item SAT \& SMT solver developed and maintained by Microsoft Research
+\item Libre and Open Source (MIT Licensed)
+\item C++, with python bindings (\verb|pip install z3-solver|)
+\item Based on the CDCL algorithm
+\end{itemize}
+\end{frame}
 
 \begin{frame}[fragile]
 \frametitle{What is SAT?}
@@ -93,15 +126,8 @@
 \end{itemize}
 \end{frame}
 
-\begin{frame}[fragile]
-\frametitle{What is Z3?}
-\begin{itemize}
-\item SAT \& SMT solver developed and maintained by Microsoft Research
-\item Libre and Open Source (MIT Licensed)
-\item C++, with python bindings (\verb|pip install z3-solver|)
-\item Based on the CDCL algorithm
-\end{itemize}
-\end{frame}
+\questionsslide{ so far}
+\section{Solving some small examples with Z3}
 
 \begin{frame}[fragile]
 \frametitle{Using Z3 on small examples: 1/3}
@@ -158,6 +184,7 @@ x\\y\\z
 1\\2\\3
 \end{matrix}\right]
 \)
+
 \item \begin{Verbatim}[fontsize=\scriptsize, frame=single]
 import z3
 x, y, z = z3.Reals('x y z')
@@ -178,6 +205,9 @@ print(solver.model())
 \end{Verbatim}
 \end{itemize}
 \end{frame}
+
+\questionsslide{ so far}
+\section{Solving Cyberseed 2019's "Hasher" challenge}
 
 \begin{frame}[fragile]
 \frametitle{Cyberseed Hasher - Problem description}
@@ -266,6 +296,18 @@ z3 solution: [x3 = 74, x2 = 98, x1 = 114, x5 = 48, x4 = 51, x0 = 100]
 \end{itemize}
 \end{frame}
 
+\questionsslide{ so far}
+\section{Solving Modern Binary Exploitation's lab1A}
+
+\begin{frame}[fragile]
+\frametitle{MBE Lab1A - Acquiring it to follow along}
+\begin{itemize}
+\item \verb|git clone https://github.com/RPISEC/MBE|
+\item \verb|cd MBE/src/lab01|
+\item Load the \verb|lab1A| binary into your favorite disassembler
+\end{itemize}
+\end{frame}
+
 \begin{frame}[fragile]
 \frametitle{MBE Lab1A - Just Running It}
 \includegraphics[width=0.9\paperwidth]{pictures/mbe_lab1a_dynamic_fail_cropped.png}
@@ -316,6 +358,8 @@ z3 solution: [x3 = 74, x2 = 98, x1 = 114, x5 = 48, x4 = 51, x0 = 100]
 \frametitle{MBE Lab1A - auth() 6/6: Loop footer, return targets}
 \includegraphics[width=0.9\paperwidth]{pictures/intel/mbe_lab1a_auth_chunk6.png}
 \end{frame}
+
+\questionsslide{ on the assembly, before we get to z3ing it}
 
 \begin{frame}[fragile]
 \frametitle{MBE Lab1A - Z3ing auth() 1/7: Setting up variables}
@@ -531,6 +575,8 @@ print('serial for name %r is %r' % (username2, serial2))
 serial for name 'sEa2):2-' is 6234464
 \end{Verbatim}
 \end{frame}
+
+\questionsslide{ overall}
 
 \begin{frame}[fragile]
 \frametitle{Resources}
