@@ -44,6 +44,9 @@
 \begin{itemize}
 \item SAT is the boolean SATisfiability problem
 \item e.g. "Does the formula $(x \lor \neg y \lor z) \land (\neg x \lor y)$ have a satisfying assignment?"
+\begin{itemize}
+\item $(\neg, \land, \lor)$ mean (NOT, AND, OR)
+\end{itemize}
 \item Brute forceable in $O(2^n)$ by trying all combinations of $\{0,1\}$ for all variables
 \item NP-Complete 
 \begin{itemize}
@@ -58,7 +61,7 @@
 \begin{itemize}
 \item SMT is Satisfiability Modulo Theories
 \item "Does $(f(x,y) \lor z) \land (\neg g(x) = f(x, x))$ have a satisfying assignment?" (QF-EUF)
-\item "Does $2*x+y \le z \land x+3*y \ge z$ have a satisfying assignment" (QF-LIA)
+\item "Does $(2*x+y \le z) \land (x+3*y \ge z)$ have a satisfying assignment" (QF-LIA)
 \item Allows more compact translation of problems, e.g.
 \begin{itemize}
 \item $x = 1 \lor x = 2 \lor x = 3 \lor \hdots \lor x = 99 \lor x = 100$ (SAT)
@@ -107,7 +110,7 @@ solver.add(z3.And(z3.Or(x, z3.Not(y), z), z3.Or(z3.Not(x), y)))
 if solver.check().r == 1:
     print(solver.model())
 \end{Verbatim}
-\item $2*x+y \le z \land x+3*y \ge z \land z > 1$
+\item $(2*x+y \le z) \land (x+3*y \ge z) \land (z > 1)$
 \item \begin{Verbatim}[fontsize=\scriptsize, frame=single]
 import z3
 solver = z3.Solver()
@@ -193,15 +196,51 @@ sym_serial = z3.BitVec('serial', 32)
 \begin{frame}[fragile]
 \frametitle{MBE Lab1A - Z3ing auth() 2/?: Translating the pre-loop math}
 \begin{Verbatim}[fontsize=\scriptsize, frame=single]
-eax = sym_username[3]
+0x08048ab6      8b4508         mov eax, dword [arg_8h]
+0x08048ab9      83c003         add eax, 3 ; eax = (arg_8h + 3)
+0x08048abc      0fb600         movzx eax, byte [eax] ; eax = *(uint8_t*)(arg_8h+3)
+0x08048abf      0fbec0         movsx eax, al ; eax = (int32_t)*(uint8_t*)(arg_8h+3)
+0x08048ac2      3537130000     xor eax, 0x1337
+0x08048ac7      05eded5e00     add eax, 0x5eeded
+0x08048acc      8945f0         mov dword [local_10h], eax
+\end{Verbatim}
+
+\begin{Verbatim}[fontsize=\scriptsize, frame=single]
+eax = z3.SignExt(24, sym_username[3]) # (int32_t)*((uint8_t*)arg_8h + 3)
 eax ^= z3.BitVecVal(0x1337, 32)
 eax += z3.BitVecVal(0x5eeded, 32)
 local_10h = eax
 \end{Verbatim}
 \begin{itemize}
 \item We're wrapping concrete values in \verb|z3.BitVecVal| so that wrapping/truncation happens the x86 way
-\item If we wre using python longs here, we'd have to manually mask them back into range
+\item If we were using python longs here, we'd have to manually mask them back into range
 \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{MBE Lab1A - Z3ing auth() 3/?: Translating the loop header/footer}
+The following x86:
+\begin{Verbatim}[fontsize=\scriptsize, frame=single]
+0x08048acf      c745ec000000.  mov dword [local_14h], 0
+0x08048ad6      eb4e           jmp 0x8048b26
+...
+0x08048b22      8345ec01       add dword [local_14h], 1
+0x08048b26      8b45ec         mov eax, dword [local_14h]
+0x08048b29      3b45f4         cmp eax, dword [local_ch]
+0x08048b2c      7caa           jl 0x8048ad8
+\end{Verbatim}
+Translates to the following C:
+\begin{Verbatim}[fontsize=\scriptsize, frame=single]
+for(int local_14h=0; local_14h < local_ch; local_14h++) {
+    /* loop body is between 0x08048ad6 and 0x08048b22, exclusive on both ends */
+}
+\end{Verbatim}
+So we'll gloss that as the following in Python
+\begin{Verbatim}[fontsize=\scriptsize, frame=single]
+local_ch = len(sym_username) # this is set by the strnlen at 0x08048a3e
+for local_14h in range(local_ch):
+    pass # we'll translate the loop body here
+\end{Verbatim}
 \end{frame}
 
 \begin{frame}[fragile]
