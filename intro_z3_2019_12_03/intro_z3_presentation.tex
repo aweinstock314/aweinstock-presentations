@@ -59,6 +59,7 @@
 \frametitle{Overview}
 \begin{itemize}
 \item What are SAT/SMT/Z3?
+\item How do the z3 python bindings work?
 \item Solving some small, isolated examples with Z3
 \item Solving a Cyberseed RE challenge with Z3
 \item Solving MBE lab1A with Z3
@@ -123,6 +124,59 @@
 \end{itemize}
 \item Algorithms like DPLL and CDCL make use of partial structure to solve some instances faster than others
 \item SMT can make use of the rules for the extra types of symbols to prune the search space at a higher level
+\end{itemize}
+\end{frame}
+
+\questionsslide{ so far}
+\section{The z3 python bindings}
+
+\begin{frame}[fragile]
+\frametitle{Installing and importing z3}
+\begin{itemize}
+\item \verb|pip install z3-solver|
+\item \begin{Verbatim}[fontsize=\scriptsize, frame=single]
+import z3
+\end{Verbatim}
+\item Some people do \Verb[frame=single]|from z3 import *|, but the remainder of this talk will use the qualified import version
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Variables and Values}
+\begin{itemize}
+\item \begin{Verbatim}[fontsize=\scriptsize, frame=single]
+import z3
+x = z3.Int('x')
+y = z3.BitVec('y', 32)
+z = z3.BitVec('z', 16)
+w = z3.Real('w')
+\end{Verbatim}
+\item Variables are symbolic
+\item Operator overloading allows creation of constraints
+\item \begin{Verbatim}[fontsize=\scriptsize, frame=single]
+import z3
+a = z3.IntVal(42)
+b = z3.BitVecVal(0xdeadbeef, 32)
+c = z3.BitVecVal(0xbeef, 16)
+d = z3.RealVal(__import__('math').pi)
+\end{Verbatim}
+\item Values are concrete
+\item Dynamic type checks on them are stricter than Python's defaults %(e.g. adding a 32-bit value and a 16-bit value will fail, forcing you to specify whether you want to truncate or extend)
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Solver objects}
+\begin{itemize}
+\item \begin{Verbatim}[fontsize=\scriptsize, frame=single]
+import z3
+solver = z3.Solver()
+\end{Verbatim}
+\item The \verb|Solver| class collects constraints/equations to solve
+\item \verb|solver.add| adds constraints to the current collection
+\item \verb|solver.check()| checks if the current constraints are solvable, returning one of \verb|{z3.sat, z3.unsat, z3.unknown}|
+\item After \verb|solver.check()| returns \verb|z3.sat|, \verb|z3.model()| will give you the values that make the constraints true
+%\item \verb|solver.push()| creates a choice point so you can backtrack
 \end{itemize}
 \end{frame}
 
