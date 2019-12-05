@@ -1,0 +1,87 @@
+\documentclass[aspectratio=169]{beamer}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{tikz}
+\usepackage{fancyvrb}
+\usepackage{xcolor}
+\title{Symbolic Execution with Angr\\RPISEC}
+\date{December 6, 2019}
+\author{Avi Weinstock (\Verb|aweinstock|), Luke Biery (\Verb|tiecoon|)}
+
+\input{../rpisec_beamer_theme.tex}
+
+\begin{document}
+\maketitle
+
+\begin{frame}[fragile]
+\frametitle{Overview}
+\begin{itemize}
+\item What is Symbolic Execution? What techniques does it compete with?
+\item How symbolic execution works (theory)
+\item How symbolic execution works (Angr commands)
+\item Solving MBE lab1A with Angr
+\end{itemize}
+\end{frame}
+
+\section{Background - What it is and what is the problem space?}
+\begin{frame}[fragile]
+\frametitle{What is Symbolic Execution?}
+\begin{itemize}
+\item Executes a program with symbolic data (usually input)
+\item Essentially runs a program on "all possible inputs" at once
+\item Instead of having concrete data in each variable/address, \\variables/addresses store trees of what to do with the input
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{What problems does Symbolic Execution solve?}
+\begin{itemize}
+\item What input to provide to reach/avoid a specific line of code?
+\item How is a value deep in the program affected by some specific input?
+\item Do any inputs lead to any crash?
+\item On a crashing input, what registers are controlled by the input?
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Symbolic Execution vs Fuzzing}
+\begin{tabular}{c|c}
+Symbolic Execution & Fuzzing\\\hline
+\textcolor{green}{+ Explores all inputs} & \textcolor{red}{- Only explores random inputs}\\
+\textcolor{red}{- Uses more memory/time} & \textcolor{green}{+ Uses around as much memory/time as target program}
+\end{tabular}
+TODO: more comparisons/columns? emphasize that "all inputs" means that symexec can find constant-time comparisons against a giant constant, unlike coverage-guided?
+\end{frame}
+
+\section{How symbolic execution works in general}
+\begin{frame}[fragile]
+\frametitle{TODO: Avi}
+\begin{itemize}
+\item symbolic branches
+\item symbolic loops
+\item symbolizing tainted memory (e.g. \verb|sym_memory[(EBP+username+i)]| vs \verb|sym_username[i]|)
+\item state explosion when looping on symbolic data
+\end{itemize}
+\end{frame}
+
+\section{How to use Angr for symbolic execution}
+\begin{frame}[fragile]
+\frametitle{TODO: Luke}
+\begin{itemize}
+\item loading binariess
+\item marking input as symbolic
+\item initiating the search/pruning the search space
+\item simprocedures for shortcutting syscalls?
+\end{itemize}
+\end{frame}
+
+\section{Example: MBE lab1A with Angr}
+\begin{frame}[fragile]
+\frametitle{Resources}
+\begin{itemize}
+\item \verb|https://github.com/angr/|
+\item \verb|https://github.com/Z3Prover/z3/|
+\item \verb|https://github.com/RPISEC/MBE|
+\end{itemize}
+\end{frame}
+\end{document}

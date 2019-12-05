@@ -1,0 +1,13 @@
+.gitignore
+
+*.swp
+*.pyc
+
+*.aux
+*.dvi
+*.log
+*.nav
+*.out
+*.snm
+*.toc
+*.vrb
