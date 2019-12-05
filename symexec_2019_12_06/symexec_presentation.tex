@@ -54,6 +54,74 @@ TODO: more comparisons/columns? emphasize that "all inputs" means that symexec c
 \end{frame}
 
 \section{How symbolic execution works in general}
+
+\begin{frame}[fragile]
+\frametitle{Setting up a state for symbolic execution}
+\begin{itemize}
+\item \begin{Verbatim}[fontsize=\scriptsize, frame=single]
+import z3
+registers = ['eax', 'ebx', 'ecx', 'edx', 'ebp', 'esp'] # and so on
+symstate = {reg: z3.BitVec(reg, 32) for reg in registers}
+symstate['memory'] = z3.Array('memory', z3.BitVecSort(32), z3.BitVecSort(8))
+\end{Verbatim}
+\item Note that the z3 variable \verb|eax| in the model will be the starting value of \verb|eax|
+\item \verb|symstate['eax']| will be mutated throughout the computation, and will contain an expression corresponding to the ending value of \verb|eax|
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Symbolically executing branch-free code}
+\begin{itemize}
+\item Translate arithmetic, indexing, etc into SMT constraints
+\end{itemize}
+\begin{minipage}{0.3\textwidth}
+\begin{Verbatim}[fontsize=\scriptsize, frame=single]
+mov eax, ebx
+\end{Verbatim}
+\end{minipage}
+\begin{minipage}{0.68\textwidth}
+\begin{Verbatim}[fontsize=\scriptsize, frame=single]
+symstate['eax'] = symstate['ebx']
+\end{Verbatim}
+\end{minipage}
+
+\begin{minipage}{0.3\textwidth}
+\begin{Verbatim}[fontsize=\scriptsize, frame=single]
+add ecx, edx
+\end{Verbatim}
+\end{minipage}
+\begin{minipage}{0.68\textwidth}
+\begin{Verbatim}[fontsize=\scriptsize, frame=single]
+symstate['ecx'] += symstate['edx']
+\end{Verbatim}
+\end{minipage}
+
+\begin{minipage}{0.3\textwidth}
+\begin{Verbatim}[fontsize=\scriptsize, frame=single]
+mov byte [esp+0x10], al
+\end{Verbatim}
+\end{minipage}
+\begin{minipage}{0.68\textwidth}
+\begin{Verbatim}[fontsize=\scriptsize, frame=single]
+esp_10 = symstate['esp']+0x10
+al = z3.Extract(7, 0, symstate['eax'])
+symstate['memory'] = z3.Store(symstate['memory'], esp_10, al)
+\end{Verbatim}
+\end{minipage}
+
+\begin{minipage}{0.3\textwidth}
+\begin{Verbatim}[fontsize=\scriptsize, frame=single]
+movsx eax, byte [eax]
+\end{Verbatim}
+\end{minipage}
+\begin{minipage}{0.68\textwidth}
+\begin{Verbatim}[fontsize=\scriptsize, frame=single]
+star_eax = z3.Select(symstate['memory'], eax)
+symstate['eax'] = z3.SignExt(24, star_eax)
+\end{Verbatim}
+\end{minipage}
+\end{frame}
+
 \begin{frame}[fragile]
 \frametitle{TODO: Avi}
 \begin{itemize}
