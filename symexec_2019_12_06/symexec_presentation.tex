@@ -299,17 +299,78 @@ void memcpy(
 \end{frame}
 
 \section{How to use Angr for symbolic execution}
+
+\begin{frame}[fragile]
+\frametitle{Loading binaries into Angr}
+\begin{itemize}
+\item \begin{Verbatim}[fontsize=\scriptsize, frame=single]
+import angr
+p = angr.Project('/path/to/binary')
+\end{Verbatim}
+\end{itemize}
+\end{frame}
+
 \begin{frame}[fragile]
 \frametitle{TODO: Luke}
 \begin{itemize}
-\item loading binariess
 \item marking input as symbolic
 \item initiating the search/pruning the search space
 \item simprocedures for shortcutting syscalls?
 \end{itemize}
 \end{frame}
 
-\section{Example: MBE lab1A with Angr}
+\section{Example: Fairgame RE400 with Angr}
+\begin{frame}[fragile]
+\frametitle{Fairgame RE400 script and output}
+\begin{minipage}{0.55\textwidth}
+Script:
+\begin{Verbatim}[frame=single, fontsize=\tiny]
+import angr
+import claripy
+
+p = angr.Project("./re400")
+
+for j in range(0xFF):
+    # make a symbolic list of j bytes
+    flag_chars = [claripy.BVS("serial_%d" % i, 8) for i in range(j)]
+    # combine them all
+    flag = claripy.Concat(*flag_chars)
+
+    # tell angr to start at entry
+    init = p.factory.entry_state(stdin=flag)
+
+    sm = p.factory.simulation_manager(init)
+
+    # find a state with "unlocked" in stdout
+    sm.explore(find=lambda s: b"unlocked" in s.posix.dumps(1))
+
+    # try next length if not found
+    if len(sm.found) == 0:
+        continue
+    print('Good length: %d' % (j,))
+
+    print(sm)
+    for i in sm.found:
+        print(i.posix.dumps(1))
+        print(i.posix.dumps(0))
+    break
+\end{Verbatim}
+\end{minipage}
+\begin{minipage}{0.44\textwidth}
+Redacted output:
+\begin{Verbatim}[frame=single, fontsize=\tiny]
+Good length: 25
+<SimulationManager with 1 active, 1 found>
+b'[+] Welcome to the REvision 400 lock firmware.\n
+[!] Please enter the serial:\n
+[+] REvision 400 lock firmware unlocked.\n'
+b'flag{__________________}\xff'
+python script.py  154.01s user 2.08s system
+102% cpu 2:31.85 total
+\end{Verbatim}
+\end{minipage}
+\end{frame}
+
 \begin{frame}[fragile]
 \frametitle{Resources}
 \begin{itemize}
