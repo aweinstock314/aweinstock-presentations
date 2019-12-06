@@ -58,6 +58,7 @@ Symbolic Execution & Fuzzing\\\hline
 %TODO: more comparisons/columns? emphasize that "all inputs" means that symexec can find constant-time comparisons against a giant constant, unlike coverage-guided?
 \end{frame}
 
+\questionsslide{ so far}
 \section{How symbolic execution works in general}
 
 \begin{frame}[fragile]
@@ -177,6 +178,8 @@ symstate['eax'] ^= symstate['memory'][local_10]
 \end{Verbatim}
 \end{minipage}
 \end{frame}
+
+\questionsslide{ so far}
 
 \begin{frame}[fragile]
 \frametitle{Symbolically executing branchs - Graphically}
@@ -298,6 +301,7 @@ void memcpy(
 \end{minipage}
 \end{frame}
 
+\questionsslide{ so far}
 \section{How to use Angr for symbolic execution}
 
 \begin{frame}[fragile]
@@ -365,7 +369,7 @@ void memcpy(
 \item To execute you will normally want to use \verb|.run()| or \verb|.explore()|
 \item Explore
 \begin{itemize}
-\item Allows you to guide execution better and limit computation neccesarry
+\item Allows you to guide execution better and limit computation necessary
 \item You can specify find and avoid conditions via addresses or lambda functions
 \end{itemize}
 \item Run
@@ -376,6 +380,42 @@ void memcpy(
 \end{itemize}
 \item Many more that are more application specific
 \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Angr - States}
+\begin{itemize}
+\item States will allow you to introspect, touch or check memory values
+\item For now we will only be touching state.posix
+\begin{itemize}
+\item This allows access to the various posix style file descriptors on supported systems
+\item Alot you can do here by using hooks and moving states between stashes
+\end{itemize}
+\item Stashes
+\begin{itemize}
+\item Active
+\item Deadended
+\item Pruned
+\item Unconstrained
+\item Unsat
+\end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Angr - Symbolic Values}
+\begin{itemize}
+\item Angr uses a library called claripy which is their wrapper for constraint solvers
+\item Used in place of direct Z3 calls so it is portable between different backends
+\item Shouldn't need to touch anything besides
+\begin{itemize}
+\item BV - bitvector
+\item FP - floating point
+\item Bool - boolean
+\end{itemize}
+\item Then just like in Z3 you can perform math with these, however to combine them one after another you need to use Concat()
+\item NOTE: The default python \verb|>|, \verb|<|, \verb|>=|, and \verb|<=| are unsigned in Claripy. This is different than their behavior in Z3, because it seems more natural in binary analysis.
 \end{itemize}
 \end{frame}
 
@@ -430,6 +470,8 @@ python script.py  154.01s user 2.08s system
 \end{Verbatim}
 \end{minipage}
 \end{frame}
+
+\questionsslide{ overall}
 
 \begin{frame}[fragile]
 \frametitle{Resources}
