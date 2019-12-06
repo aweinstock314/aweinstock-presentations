@@ -421,6 +421,58 @@ void memcpy(
 
 \section{Example: Fairgame RE400 with Angr}
 \begin{frame}[fragile]
+\frametitle{Fairgame RE400 Ghidra decompilation}
+\begin{minipage}{0.5\textwidth}
+\begin{Verbatim}[frame=single, fontsize=\tiny]
+int main () {
+  puts("[+] Welcome to the REvision 400 lock firmware.");
+  uStack288 = 0x1008b1;
+  puts("[!] Please enter the serial:");
+  uStack288 = 0x1008cc;
+  fgets(&local_118,0xfe,stdin);
+  uStack288 = 0x1008db;
+  sVar2 = strlen(&local_118);
+  *(&uStack288 + sVar2 + 7) = 0;
+  uStack288 = 0x1008f6;
+  mangle(&local_118);
+  uStack288 = 0x100911;
+  iVar1 = memcmp(&local_118,expect,0xfe);
+  if (iVar1 == 0) {
+    uStack288 = 0x100921;
+    puts("[+] REvision 400 lock firmware unlocked.");
+  }
+  else {
+    uStack288 = 0x10092f;
+    puts("[-] Invalid serial.");
+  }
+  if (local_10 != *(in_FS_OFFSET + 0x28)) {
+                    /* WARNING: Subroutine does not return */
+    uStack288 = 0x100948;
+    __stack_chk_fail();
+  }
+  return 0;
+}
+\end{Verbatim}
+\end{minipage}
+\begin{minipage}{0.49\textwidth}
+\begin{Verbatim}[frame=single, fontsize=\tiny]
+void mangle(char *input) {
+  int i;
+  i = 0;
+  while (i < 0xfe) {
+    swap(input + i,
+         input + *(map + i * 4),
+         input + *(map + i * 4),
+         i);
+    i = i + 1;
+  }
+  return;
+}
+\end{Verbatim}
+\end{minipage}
+\end{frame}
+
+\begin{frame}[fragile]
 \frametitle{Fairgame RE400 script and output}
 \begin{minipage}{0.55\textwidth}
 Script:
