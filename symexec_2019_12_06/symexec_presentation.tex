@@ -48,6 +48,7 @@
 \begin{tabular}{c|c}
 Symbolic Execution & Fuzzing\\\hline
 \textcolor{green}{+ Explores all inputs} & \textcolor{red}{- Only explores random inputs}\\
+\textcolor{green}{+ Very detailed output} & \textcolor{red}{- Only learn crash vs non-crash}\\
 \textcolor{red}{- Uses more memory/time} & \textcolor{green}{+ Uses around as much memory/time as target program}
 \end{tabular}
 TODO: more comparisons/columns? emphasize that "all inputs" means that symexec can find constant-time comparisons against a giant constant, unlike coverage-guided?
@@ -123,9 +124,49 @@ symstate['eax'] = z3.SignExt(24, star_eax)
 \end{frame}
 
 \begin{frame}[fragile]
+\frametitle{Symbolically executing branchs}
+\begin{minipage}{0.25\textwidth}
+\begin{Verbatim}[fontsize=\scriptsize, frame=single]
+int f(int x, int y) {
+    if (x > 3) {
+        x += 1;
+    } else {
+        y = 2*y+3;
+    }
+    if(y != 0) {
+        x /= y;
+    } else {
+        x *= 2;
+    }
+    return x + y;
+}
+\end{Verbatim}
+\end{minipage}
+\begin{minipage}{0.6\textwidth}
+\begin{tikzpicture}
+\draw (-1.5,5) rectangle node{$x = x_0$, $y = y_0$} (1.5,4);
+
+\draw[green, ->] (-1,4) -- node[left]{$x > 3$} (-1.5, 3.5); 
+\draw (-3.5,3.5) rectangle node{$x = x_0+1$, $y = y_0$} (-0.5,2.5);
+\draw[red, ->] (1,4) -- node[right]{$x \le 3$} (1.5, 3.5); 
+\draw (0.5,3.5) rectangle node{$x = x_0$, $y = 2*y_0+3$} (4.5,2.5);
+
+\draw[green, ->] (-3,2.5) -- node[left]{$y \neq 0$} (-4, 2); 
+\draw (-5, 2) rectangle node[above]{$x = \frac{x_0+1}{y_0}$} node[below]{$y = y_0$} (-3.1, 0.5);
+\draw[red, ->] (-1,2.5) -- node[left]{$y = 0$} (-1, 2); 
+\draw (-2.9, 2) rectangle node[above]{$x = 2*(x_0+1)$} node[below]{$y = 0$} (-0, 0.5);
+
+\draw[green, ->] (1,2.5) -- node[left]{$y \neq 0$} (1, 2); 
+\draw (2.9, 2) rectangle node[above]{$x = \frac{x_0}{2*y_0+3}$} node[below]{$y = 2*y_0+3$} (0.1, 0.5);
+\draw[red, ->] (3,2.5) -- node[left]{$y = 0$} (4, 2); 
+\draw (5, 2) rectangle node[above]{$x = 2*x_0$} node[below]{$y = 0$} (3.1, 0.5);
+\end{tikzpicture}
+\end{minipage}
+\end{frame}
+
+\begin{frame}[fragile]
 \frametitle{TODO: Avi}
 \begin{itemize}
-\item symbolic branches
 \item symbolic loops
 \item symbolizing tainted memory (e.g. \verb|sym_memory[(EBP+username+i)]| vs \verb|sym_username[i]|)
 \item state explosion when looping on symbolic data
