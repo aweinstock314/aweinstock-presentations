@@ -51,7 +51,11 @@ Symbolic Execution & Fuzzing\\\hline
 \textcolor{green}{+ Very detailed output} & \textcolor{red}{- Only learn crash vs non-crash}\\
 \textcolor{red}{- Uses more memory/time} & \textcolor{green}{+ Uses around as much memory/time as target program}
 \end{tabular}
-TODO: more comparisons/columns? emphasize that "all inputs" means that symexec can find constant-time comparisons against a giant constant, unlike coverage-guided?
+\begin{itemize}
+\item Symbolic execution can the path \verb|if(input == 0xdeadbeefdeadbeef) { ... }|
+\item Even coverage-guided fuzzing will only find it $\frac{1}{2^{64}}$ of the time\footnote{Unless the compare is digit-by-digit}
+\end{itemize}
+%TODO: more comparisons/columns? emphasize that "all inputs" means that symexec can find constant-time comparisons against a giant constant, unlike coverage-guided?
 \end{frame}
 
 \section{How symbolic execution works in general}
@@ -71,9 +75,20 @@ symstate['memory'] = z3.Array('memory', z3.BitVecSort(32), z3.BitVecSort(8))
 \end{frame}
 
 \begin{frame}[fragile]
+\frametitle{\texttt{z3.Array} vs dict of \texttt{z3.BitVec} for representing memory}
+\begin{itemize}
+\item \verb|memory = z3.Array('memory', z3.BitVecSort(32), z3.BitVecSort(8))| symbolically represents an array of $2^{32}$ bytes (around 4GB)
+\item \verb|z3.Store(memory, index, value)| represents a modified memory (with \verb|value| written to \verb|index|), even with \textit{symbolic} \verb|index| and \verb|value|
+\item \verb|memory[index]| represents a read from memory, even if \verb|index| is symbolic
+\item \verb|memory = {i: z3.BitVec('mem[{i}]'.format(i=i), 8) for i in idxs}| only allows concrete indices, while still allowing symbolic values, and is more efficient when we know we won't have symbolic-indexed reads/writes
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
 \frametitle{Symbolically executing branch-free code}
 \begin{itemize}
 \item Translate arithmetic, indexing, etc into SMT constraints
+\item Angr internally uses VEX for this instead of translating x86 directly
 \end{itemize}
 \begin{minipage}{0.3\textwidth}
 \begin{Verbatim}[fontsize=\scriptsize, frame=single]
@@ -119,6 +134,46 @@ movsx eax, byte [eax]
 \begin{Verbatim}[fontsize=\scriptsize, frame=single]
 star_eax = z3.Select(symstate['memory'], eax)
 symstate['eax'] = z3.SignExt(24, star_eax)
+\end{Verbatim}
+\end{minipage}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Handling symbolic reads with \texttt{z3.Array} vs \texttt{z3.BitVec}}
+\begin{minipage}{0.46\textwidth}
+C:
+\begin{Verbatim}[fontsize=\scriptsize, frame=single]
+tmp = username[i];
+tmp ^= serial;
+\end{Verbatim}
+Assembly:
+\begin{Verbatim}[fontsize=\scriptsize, frame=single]
+0x08048aee      mov edx, dword [local_14h]
+0x08048af1      mov eax, dword [arg_8h]
+0x08048af4      add eax, edx
+0x08048af6      movzx eax, byte [eax]
+0x08048af9      movsx eax, al
+0x08048afc      xor eax, dword [local_10h]
+\end{Verbatim}
+\end{minipage}
+\begin{minipage}{0.53\textwidth}
+List of \verb|z3.BitVec|:
+\begin{Verbatim}[fontsize=\scriptsize, frame=single]
+eax = z3.SignExt(24, sym_username[local_14h])
+eax ^= local_10h
+\end{Verbatim}
+\verb|z3.Array|:
+\begin{Verbatim}[fontsize=\scriptsize, frame=single]
+local_14 = symstate['esp']+0x14 # &i
+symstate['edx'] = symstate['memory'][local_14]
+arg_8 = symstate['ebp']+0x8 # &username
+symstate['eax'] = symstate['memory'][arg_8]
+symstate['eax'] += symstate['edx']
+symstate['eax'] = z3.ZeroExt(24,symstate['eax'])
+al = z3.Extract(7, 0, symstate['eax'])
+symstate['eax'] = z3.SignExt(24, al)
+local_10 = symstate['esp']+0x10 # &serial
+symstate['eax'] ^= symstate['memory'][local_10]
 \end{Verbatim}
 \end{minipage}
 \end{frame}
@@ -210,12 +265,37 @@ for (x, y, s) in newstates:
 \end{frame}
 
 \begin{frame}[fragile]
-\frametitle{TODO: Avi}
-\begin{itemize}
-\item symbolic loops
-\item symbolizing tainted memory (e.g. \verb|sym_memory[(EBP+username+i)]| vs \verb|sym_username[i]|)
-\item state explosion when looping on symbolic data
-\end{itemize}
+\frametitle{Symbolically executing loops}
+\begin{minipage}{0.35\textwidth}
+\begin{Verbatim}[fontsize=\scriptsize, frame=single]
+void memcpy(
+    char *dest,
+    const char *src,
+    size_t n) {
+    for(size_t i=0; i<n; i++) {
+        dest[i] = src[i];
+    }
+}
+\end{Verbatim}
+\end{minipage}
+\begin{minipage}{0.6\textwidth}
+\begin{tikzpicture}
+\draw (0,5) rectangle node[above]{$i=0$} node[below]{$mem = mem_0$} (4,4);
+\draw[green, ->] (2,4) -- node[left]{$i < n$} (2, 3.5); 
+\draw[red, ->] (4,4.5) -- node[above]{$i \ge n$} (6, 4.5); 
+
+\draw (-2,3.5) rectangle node[above]{$i=1$} node[below]{$mem_1 = Store(mem_0, dst+0, mem_0[src+0])$} (6,2);
+\draw[green, ->] (2, 2) -- node[left]{$i < n$} (2, 1.5); 
+\draw[red, ->] (6,3) -| node[right]{$i \ge n$} (6.5, 4); 
+
+\draw (-2,1.5) rectangle node[above]{$i=2$} node[below]{$mem_2 = Store(mem_1, dst+1, mem_1[src+1])$} (6,-0.5);
+\draw[green, ->] (2, -0.5) -- node[left]{$i < n$} (2, -1); 
+\draw (2, -1.5) node{$\hdots$};
+\draw[red, ->] (6,0.5) -| node[right]{$i \ge n$} (6.6, 4); 
+
+\draw (6, 5) rectangle node{ret} (7, 4);
+\end{tikzpicture}
+\end{minipage}
 \end{frame}
 
 \section{How to use Angr for symbolic execution}
