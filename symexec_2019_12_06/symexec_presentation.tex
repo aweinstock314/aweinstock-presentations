@@ -301,21 +301,81 @@ void memcpy(
 \section{How to use Angr for symbolic execution}
 
 \begin{frame}[fragile]
-\frametitle{Loading binaries into Angr}
+\frametitle{Angr}
 \begin{itemize}
-\item \begin{Verbatim}[fontsize=\scriptsize, frame=single]
-import angr
-p = angr.Project('/path/to/binary')
-\end{Verbatim}
+\item A very useful tool for RE made by shellphish and now maintained by SEFCOM at Arizona State University as well
+\item Originally made for DARPA’s cyber grand challenge.
+\item A very strong framework for emulation allowing symbolic values.
 \end{itemize}
 \end{frame}
 
 \begin{frame}[fragile]
-\frametitle{TODO: Luke}
+\frametitle{Angr - The basics}
 \begin{itemize}
-\item marking input as symbolic
-\item initiating the search/pruning the search space
-\item simprocedures for shortcutting syscalls?
+\item It is written almost entirely in python and as such currently only has python bindings.
+\item Installation
+\begin{itemize}
+\item Has a couple dependencies that may conflict with other packages so it is recommended to use python virtual environments.
+\item \verb|$ pip install --user angr|
+\item Now you can just import angr in any python interpreter
+\end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Angr - Writing a script}
+\begin{itemize}
+\item The basic block in angr is a project
+\item It is how you tell angr what file to load
+\item Can be used to obtain a bunch of metadata as well about the file
+\begin{itemize}
+\item \verb|project = angr.Project("./binary")|
+\end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Angr - Writing a script}
+\begin{itemize}
+\item Accessing everything else will be done through factory
+\begin{itemize}
+\item \verb|project.factory|
+\end{itemize}
+\item Next you will have to tell angr where it should start
+\item Most of the time you want this to be \verb|entry_state()|
+\begin{itemize}
+\item This will setup everything as it would be at the entry point if you ran the binary
+\item This is where you would tell it if you wanted a special stdin or args
+\begin{itemize}
+\item You can use claripy to make it symbolic
+\end{itemize}
+\end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Angr - Simulation manager}
+\begin{itemize}
+\item This will hold all your various states as they are created and abandoned
+\begin{itemize}
+\item \verb|sm = project.factory.simulation_manager(state)|
+\end{itemize}
+\item Executing
+\begin{itemize}
+\item To execute you will normally want to use \verb|.run()| or \verb|.explore()|
+\item Explore
+\begin{itemize}
+\item Allows you to guide execution better and limit computation neccesarry
+\item You can specify find and avoid conditions via addresses or lambda functions
+\end{itemize}
+\item Run
+\begin{itemize}
+\item Will just run every state until exhaustion
+\item Theoretically tells you all possible outcomes of the program
+\item Prone to path explosion
+\end{itemize}
+\item Many more that are more application specific
+\end{itemize}
 \end{itemize}
 \end{frame}
 
