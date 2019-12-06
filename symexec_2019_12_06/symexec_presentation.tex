@@ -124,7 +124,7 @@ symstate['eax'] = z3.SignExt(24, star_eax)
 \end{frame}
 
 \begin{frame}[fragile]
-\frametitle{Symbolically executing branchs}
+\frametitle{Symbolically executing branchs - Graphically}
 \begin{minipage}{0.25\textwidth}
 \begin{Verbatim}[fontsize=\scriptsize, frame=single]
 int f(int x, int y) {
@@ -161,6 +161,51 @@ int f(int x, int y) {
 \draw[red, ->] (3,2.5) -- node[left]{$y = 0$} (4, 2); 
 \draw (5, 2) rectangle node[above]{$x = 2*x_0$} node[below]{$y = 0$} (3.1, 0.5);
 \end{tikzpicture}
+\end{minipage}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Symbolically executing branchs - Programmatically}
+\begin{minipage}{0.25\textwidth}
+\begin{Verbatim}[fontsize=\scriptsize, frame=single]
+int f(int x, int y) {
+    if (x > 3) {
+        x += 1;
+    } else {
+        y = 2*y+3;
+    }
+    if(y != 0) {
+        x /= y;
+    } else {
+        x *= 2;
+    }
+    return x + y;
+}
+\end{Verbatim}
+\end{minipage}
+\begin{minipage}{0.74\textwidth}
+\begin{Verbatim}[fontsize=\scriptsize, frame=single]
+import z3
+x0, y0 = z3.Ints('x0 y0')
+states, newstates = [(x0, y0, z3.Solver())], []
+for (x, y, s) in states:
+  t = s.__deepcopy__()
+  s.add(x > 3); newstates.append((x+1, y, s))
+  t.add(z3.Not(x > 3)); newstates.append((x, 2*y+3, t))
+
+states, newstates = newstates, []
+for (x, y, s) in states:
+  t = s.__deepcopy__()
+  s.add(y != 0); newstates.append((x/y, y, s))
+  t.add(z3.Not(y != 0)); newstates.append((2*x, y, t))
+
+for (x, y, s) in newstates:
+  print('x: %r; y: %r; s: %r; check: %r' % (x, y, s, s.check()))
+  if s.check() == z3.sat:
+    m = s.model()
+    print('m: %r; x: %r; y: %r' % (m, m.evaluate(x), m.evaluate(y)))
+    print('-'*5)
+\end{Verbatim}
 \end{minipage}
 \end{frame}
 
